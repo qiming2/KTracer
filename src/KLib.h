@@ -273,7 +273,7 @@ namespace KT {
 	public:
 		const Surface* m_surf = nullptr;
 		vec3 m_normal;
-		float m_t;
+		float m_t = 0.0f;
 		Record() {};
 		Record(Surface* surf, float t) :m_surf(surf), m_t(t) {};
 		Record(Surface* surf, const vec3& norm, float t) :m_surf(surf), m_normal(norm), m_t(t) {};
