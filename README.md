@@ -7,4 +7,5 @@ Ray Tracing Engine
 4. Phong shading
 
 More to come
+### Early version of traced image 11/18/2021
 ![Early and simple version of traced image](Simple_trace.png)
