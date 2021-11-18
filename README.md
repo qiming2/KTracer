@@ -7,3 +7,4 @@ Ray Tracing Engine
 4. Phong shading
 
 More to come
+![Early and simple version of traced image](Simple_trace.png)

@@ -380,7 +380,7 @@ namespace KT {
 				}
 			}
 			// Add a directional light
-			const static vec3 color = vec3(rand() % 100 / 100.0f / 2.0f + 0.5f, 0.3f, rand() % 100 / 100.0f);
+			const static vec3 color = vec3(rand() % 100 / 100.0f / 2.0f + 0.5f, 0.7f, rand() % 100 / 100.0f);
 			const static vec3 lightDir = normalize(vec3(0.5f, -0.5f, -0.5f));
 			const static vec3 lightColor = vec3(0.7f, 0.7f, 0.7f);
 			const static vec3 ambientColor = vec3(0.1f, 0.1f, 0.1f);

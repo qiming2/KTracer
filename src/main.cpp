@@ -11,8 +11,8 @@ using namespace KT;
 using namespace std;
 
 const char* welcomeSen = "This is a simple ray tracer developed from scratch";
-const static int Height = 2048;
-const static int Width = 2048;
+const static int Height = 1024;
+const static int Width = 1024;
 const static float L = -1.0f;
 const static float R = 1.0f;
 const static float B = -1.0f;
@@ -70,7 +70,7 @@ int main() {
 	// Hard code two spheres for testing intersections with SurfaceManager
 	
 	KT::Sphere s;
-	s.m_o = vec3(0.5f, 0.0f, -near);
+	s.m_o = vec3(0.5f, 0.0f, -near * 0.6);
 	s.m_r = 0.3f;
 
 	KT::Sphere s1;
@@ -82,7 +82,7 @@ int main() {
 	s2.m_r = 0.25f;
 
 	KT::Sphere s3;
-	s3.m_o = vec3(0.0f, 0.7f, -near * 0.6);
+	s3.m_o = vec3(0.0f, 0.4f, -near * 0.6);
 	s3.m_r = 0.2f;
 
 	KT::Sphere s4;
