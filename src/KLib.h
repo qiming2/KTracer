@@ -1,9 +1,12 @@
 #pragma once
+#include <stdlib.h>
 #include <iostream>
+#include <vector>
 #include "util.h"
-#define EPSILON 0.000001f
+#define EPSILON 0.001f
 
-namespace KT {	
+namespace KT {
+	
 	class Record;
 	class Surface;
 	struct vec3
@@ -56,9 +59,15 @@ namespace KT {
 		vec3 operator-(const vec3& other) const {
 			return vec3(m_x - other.m_x, m_y - other.m_y, m_z - other.m_z);
 		}
-
+		
 		vec3 operator*(float s) const {
 			return vec3(m_x * s, m_y * s, m_z * s);
+		}
+
+		friend vec3 normalize(const vec3& v) {
+			vec3 ret = v;
+			ret.normalize();
+			return ret;
 		}
 
 		friend vec3 operator*(float s, const vec3& other) {
@@ -99,6 +108,12 @@ namespace KT {
 			m_y /= length;
 			m_z /= length;
 			m_w /= length;
+		}
+
+		friend vec4 normalize(const vec4& v) {
+			vec4 ret = v;
+			ret.normalize();
+			return ret;
 		}
 
 		float len() const {
@@ -271,9 +286,10 @@ namespace KT {
 
 	class Record {
 	public:
-		const Surface* m_surf = nullptr;
+		vec3 m_color;
 		vec3 m_normal;
-		float m_t = 0.0f;
+		const Surface* m_surf = nullptr;
+		float m_t = std::numeric_limits<float>::infinity();
 		Record() {};
 		Record(Surface* surf, float t) :m_surf(surf), m_t(t) {};
 		Record(Surface* surf, const vec3& norm, float t) :m_surf(surf), m_normal(norm), m_t(t) {};
@@ -281,15 +297,15 @@ namespace KT {
 
 	class Surface {
 	public:
-		virtual Record intersection(const ray& r) const { return Record(nullptr, 0.0f); };
+		virtual Record intersection(const ray& r) const { return {}; };
 	};
 	
-	class Sphere : Surface {
+	class Sphere : public Surface {
 	public:
 		vec3 m_o; // origin
 		float m_r;
 
-		Record intersection(const ray& r) const override {
+		virtual Record intersection(const ray& r) const override {
 			Record record;
 			vec3 e_minus_c = r.m_o - m_o;
 			float d_dot_d = r.m_d.dot(r.m_d);
@@ -333,5 +349,77 @@ namespace KT {
 			return out;
 		}
 	};
-}
+	
+	// Surface Manager: Contains all necessary object data necessary for doing
+	// intersection test
+	// Singletone class
+	class SurfaceManager {
+		
+	public:
+		
+		static SurfaceManager& getInstance() {
+			static SurfaceManager instance;
+			return instance;
+		}
+		void Add(Surface& surf) {
+			surfaces.push_back(&surf);
+		}
 
+		Record intersection(const ray& r, size_t level, size_t max_level, const Camera& c) {
+			
+			Record ret;
+			if (level == max_level) return ret;
+			
+			
+			Record record;
+
+			for (size_t i = 0; i < surfaces.size(); ++i) {
+				record = surfaces[i]->intersection(r);
+				if (record.m_surf && ret.m_t > record.m_t - EPSILON) {
+					ret = record;
+				}
+			}
+			// Add a directional light
+			const static vec3 color = vec3(rand() % 100 / 100.0f / 2.0f + 0.5f, 0.3f, rand() % 100 / 100.0f);
+			const static vec3 lightDir = normalize(vec3(0.5f, -0.5f, -0.5f));
+			const static vec3 lightColor = vec3(0.7f, 0.7f, 0.7f);
+			const static vec3 ambientColor = vec3(0.1f, 0.1f, 0.1f);
+			const static float shinness = 32.0f;
+			vec3 output_color;
+			vec3 hitPoint;
+			float dotH;
+			vec3 halfDir;
+			float dotHN;
+			if (ret.m_surf) {
+				// 3. Shading (flat shading without light first -> phong shading -> pbr)
+				hitPoint = r.eval(ret.m_t);
+				//print(hitPoint);
+				//print("Normal: ", record.m_normal, " LightDir: ", lightDir, " dot: ", record.m_normal.dot(lightDir));
+				dotH = std::max(ret.m_normal.dot(-lightDir), 0.0f);
+				// phong shading
+				// ambient + diffuse + specular
+				output_color = ambientColor * color;
+				output_color += dotH * color * lightColor;
+				(halfDir = (-lightDir) + (c.m_frame.getPos() - normalize(hitPoint))).normalize();
+				dotHN = std::max(halfDir.dot(ret.m_normal), 0.0f);
+				output_color += std::pow(dotHN, shinness) * lightColor * color;
+				ret.m_color = output_color;
+				
+				// If hit something, we do a reflection
+				ray reflect_ray;
+				reflect_ray.m_o = hitPoint;
+				reflect_ray.m_d = r.m_d + 2 * (-r.m_d.dot(ret.m_normal)) * ret.m_normal;
+				ret.m_color += intersection(reflect_ray, level + 1, max_level, c).m_color;
+			}
+			
+			return ret;
+		}
+		void operator=(const SurfaceManager&) = delete;
+		SurfaceManager(const SurfaceManager&) = delete;
+		
+	private:
+		// static SurfaceManager* instance;
+		std::vector<Surface*> surfaces;
+		SurfaceManager() {}
+	};
+}

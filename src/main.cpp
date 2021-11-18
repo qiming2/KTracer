@@ -1,7 +1,9 @@
+#define _USE_MATH_DEFINES
 #include <iostream>
 #include <stdlib.h>
 #include <fstream>
 #include <time.h>
+#include <cmath>
 #include "KLib.h"
 #include "util.h"
 
@@ -9,17 +11,20 @@ using namespace KT;
 using namespace std;
 
 const char* welcomeSen = "This is a simple ray tracer developed from scratch";
-const static int Height = 600;
-const static int Width = 600;
-const static float near = 1.0f;
+const static int Height = 2048;
+const static int Width = 2048;
 const static float L = -1.0f;
 const static float R = 1.0f;
 const static float B = -1.0f;
 const static float T = 1.0f;
+const static float vfov = 45.0f / 180.0f * M_PI;
+const static float near = 1.0f / tan(vfov / 2.0); // make vertical fov 45 degree
+static KT::Camera c(Width, Height);
+
 int main() {
 	println("Welcome to KTracer Engine");
 	println(welcomeSen);
-
+	//print(near);
 	// Simple math library
 	/*KT::vec3 temp = 3 * vec3(1.0, 2.0, 3);
 	KT::vec4 temp1 = KT::vec4(1.0, 2.0, 3, 2.3) * KT::vec4(1.3, 2.5, 4.0, 2);
@@ -32,11 +37,10 @@ int main() {
 	srand(time(NULL));
 	// TODO:
 	// 0. Camera
-	vec3 cam_pos(0.0f, 0.0f, 1.0f);
-	KT::Camera c(Width, Height);
+	vec3 cam_pos(0.0f, 0.0f, 0.0f);
 	c.setPos(cam_pos);
 	// 1. Generating rays (Only implementing Perspective, orthogonal would be easy if finished perspective)
-	vec3 background(0.8f, 0.3f, 0.0f);
+	vec3 background(0.3f, 0.5f, 0.7f);
 	size_t index = 0;
 	float r, g, b;
 	float* image = new float[Height * Width * 3];
@@ -53,11 +57,9 @@ int main() {
 	// w is the distance from cam pos to the center of near plane
 	KT::ray cur_ray;
 	cur_ray.m_o = c.m_frame.getPos();
-
 	vec3 u = c.m_frame.getU();
 	vec3 v = c.m_frame.getV();
 	vec3 w = c.m_frame.getW();
-	
 	float u_coord;
 	float v_coord;
 
@@ -65,17 +67,43 @@ int main() {
 	
 	
 	// 2. Generating objects (sphere as the most simplistic object to do the intersection test)
-	// Hard code a sphere for intersection test
+	// Hard code two spheres for testing intersections with SurfaceManager
 	
 	KT::Sphere s;
-	s.m_o = vec3(0.0f, 0.0f, 0.0f);
-	s.m_r = 0.5f;
-	const static vec3 color = vec3(rand() % 100 / 100.0f, 0.0f, rand() % 100 / 100.0f);
+	s.m_o = vec3(0.5f, 0.0f, -near);
+	s.m_r = 0.3f;
+
+	KT::Sphere s1;
+	s1.m_o = vec3(-0.7f, 0.0f, -near * 0.7f);
+	s1.m_r = 0.1f;
+
+	KT::Sphere s2;
+	s2.m_o = vec3(0.0f, 0.0f, -near * 1.5f);
+	s2.m_r = 0.25f;
+
+	KT::Sphere s3;
+	s3.m_o = vec3(0.0f, 0.7f, -near * 0.6);
+	s3.m_r = 0.2f;
+
+	KT::Sphere s4;
+	s4.m_o = vec3(0.0f, -0.5f, -near);
+	s4.m_r = 0.2f;
+
+	SurfaceManager& surf_man = SurfaceManager::getInstance();
+	surf_man.Add(s);
+	surf_man.Add(s1);
+	surf_man.Add(s2);
+	surf_man.Add(s3);
+	surf_man.Add(s4);
+
+	/*const static vec3 color = vec3(rand() % 100 / 100.0f / 2.0f + 0.5f, 0.3f, rand() % 100 / 100.0f);*/
 	
 	static size_t cnt = 0;
 	Record record;
 	vec3 hitPoint;
 
+
+	vec3 output_color;
 	// Add a directional light
 	static vec3 lightDir = vec3(0.5f, -0.5f, -0.5f);
 	lightDir.normalize();
@@ -83,22 +111,22 @@ int main() {
 	const static vec3 lightColor = vec3(0.7f, 0.7f, 0.7f);
 	const static vec3 ambientColor = vec3(0.1f, 0.1f, 0.1f);
 	float dotH;
-	vec3 output_color;
+	
+	const static float shinness = 32.0f;
+	vec3 halfDir;
+	float dotHN;
 	for (size_t y = 0; y < Height; ++y) {
 		for (size_t x = 0; x < Width; ++x) {
 			
 			u_coord = L + ((R - L) * (float)(0.5 +  x)) / Width;
 			v_coord = T - ((T - B) * (float)(0.5 +  y)) / Height;
 			cur_ray.m_d = -near * w + u_coord * u + v_coord * v;
-			record = s.intersection(cur_ray);
+			cur_ray.m_d.normalize();
+			// Shading inside
+			record = surf_man.intersection(cur_ray, 0, 3, c);
 			if (record.m_surf) {
-				// 3. Shading (flat shading without light first -> phong shading -> pbr)
-				//(hitPoint = cur_ray.eval(record.m_t)).normalize();
-				//print("Normal: ", record.m_normal, " LightDir: ", lightDir, " dot: ", record.m_normal.dot(lightDir));
-				dotH = max(record.m_normal.dot(lightDir), 0.0f);
-				output_color = ambientColor * color;
-				output_color += dotH * color * lightColor;
-
+				output_color = record.m_color;
+				//print(output_color);
 				// Note: y * Width * 3 since we have width * 3 floats in a row!
 				index = y * Width * 3 + x * 3;
 				image[index] =	   output_color.m_x;
