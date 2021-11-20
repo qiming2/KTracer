@@ -5,6 +5,8 @@
 #include <time.h>
 #include <cmath>
 #include "KLib.h"
+#include "Camera.h"
+#include "Tracer.h"
 #include "util.h"
 
 using namespace KT;
@@ -20,7 +22,7 @@ const static float T = 1.0f;
 const static float vfov = 45.0f / 180.0f * M_PI;
 const static float near = 1.0f / tan(vfov / 2.0); // make vertical fov 45 degree
 static KT::Camera c(Width, Height);
-
+vec3 globalDir;
 int main() {
 	println("Welcome to KTracer Engine");
 	println(welcomeSen);
@@ -60,6 +62,7 @@ int main() {
 	vec3 u = c.m_frame.getU();
 	vec3 v = c.m_frame.getV();
 	vec3 w = c.m_frame.getW();
+	print(c);
 	float u_coord;
 	float v_coord;
 
@@ -87,7 +90,9 @@ int main() {
 
 	KT::Sphere s4;
 	s4.m_o = vec3(0.0f, -0.5f, -near);
-	s4.m_r = 0.2f;
+	s4.m_r = 0.5f;
+
+	globalDir = s3.m_o - s.m_o;
 
 	SurfaceManager& surf_man = SurfaceManager::getInstance();
 	surf_man.Add(s);
