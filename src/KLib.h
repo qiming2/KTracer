@@ -3,7 +3,8 @@
 #include <iostream>
 #include <vector>
 #include "util.h"
-#define EPSILON 0.001f
+#define EPSILON 0.0001f
+#define HIT_EPSILON 0.01f
 
 namespace KT {
 	struct vec3
@@ -24,6 +25,10 @@ namespace KT {
 
 		float dot(const vec3& other) const {
 			return m_x * other.m_x + m_y * other.m_y + m_z * other.m_z;
+		}
+
+		vec3 cross(const vec3& other) const {
+			return { m_y * other.m_z - other.m_y * m_z, m_z * other.m_x - m_x * other.m_z, m_x * other.m_y - m_y * other.m_x };
 		}
 
 		void normalize() {
@@ -60,6 +65,8 @@ namespace KT {
 		vec3 operator*(float s) const {
 			return vec3(m_x * s, m_y * s, m_z * s);
 		}
+
+		
 
 		friend vec3 normalize(const vec3& v) {
 			vec3 ret = v;

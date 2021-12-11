@@ -34,6 +34,28 @@ namespace KT {
 		friend std::ostream& operator<<(std::ostream& out, const Sphere& s);
 	};
 	std::ostream& operator<<(std::ostream& out, const Sphere& s);
+
+	class Triangle : public Surface {
+	public:
+		union {
+			struct {
+				vec3 m_a;
+				vec3 m_b;
+				vec3 m_c;
+			};
+			struct {
+				vec3 v0;
+				vec3 v1;
+				vec3 v2;
+			};
+			vec3 m_data[3];
+		};
+		Triangle() {};
+		virtual Record intersection(const ray& r) const override;
+
+		friend std::ostream& operator<<(std::ostream& out, const Triangle& s);
+	};
+	std::ostream& operator<<(std::ostream& out, const Triangle& s);
 	// Surface Manager: Contains all necessary object data necessary for doing
 	// intersection test
 	// Singleton class
@@ -45,13 +67,13 @@ namespace KT {
 		void Add(Surface& surf);
 
 		Record intersection(const ray& r, size_t level, size_t max_level, const Camera& c);
-		float castShadow(const vec3& point, const vec3& lightDir) const;
 		void operator=(const SurfaceManager&) = delete;
 		SurfaceManager(const SurfaceManager&) = delete;
 		friend std::ostream& operator<<(std::ostream& out, const SurfaceManager& surfman);
 	private:
 		// static SurfaceManager* instance;
 		std::vector<Surface*> surfaces;
+		float castShadow(const vec3& point, const vec3& lightDir) const;
 		SurfaceManager();
 	};
 	std::ostream& operator<<(std::ostream& out, const SurfaceManager& surfman);

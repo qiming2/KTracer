@@ -39,19 +39,23 @@ int main() {
 	srand(time(NULL));
 	// TODO:
 	// 0. Camera
-	vec3 cam_pos(0.0f, 0.0f, 0.0f);
+	vec3 cam_pos(0.0f, 0.0f, 2.0f);
 	c.setPos(cam_pos);
 	// 1. Generating rays (Only implementing Perspective, orthogonal would be easy if finished perspective)
-	vec3 background(0.3f, 0.5f, 0.7f);
+	vec3 background(0.5, 0.7, 1.0);
 	size_t index = 0;
 	float r, g, b;
 	float* image = new float[Height * Width * 3];
+	float t;
+	vec3 color;
 	for (size_t y = 0; y < Height; ++y) {
 		for (size_t x = 0; x < Width; ++x) {
 			index = y * Width * 3 + x * 3;
-			image[index] = background.m_x;
-			image[index + 1] = background.m_y;
-			image[index + 2] = background.m_z;
+			t = (float)(Height - y) / Height;
+			color = (1.0f - t) * vec3(1.0f, 1.0f, 1.0f) + t * background;
+			image[index] =     sqrtf(color.m_x);
+			image[index + 1] = sqrtf(color.m_y);
+			image[index + 2] = sqrtf(color.m_z);
 		}
 	}
 	// ray.m_o = cam pos
@@ -92,7 +96,7 @@ int main() {
 	s4.m_o = vec3(0.0f, -0.5f, -near);
 	s4.m_r = 0.5f;
 
-	globalDir = s3.m_o - s.m_o;
+	globalDir = vec3(0.5f, -1.0f, -1.0f);
 
 	SurfaceManager& surf_man = SurfaceManager::getInstance();
 	surf_man.Add(s);
@@ -101,6 +105,16 @@ int main() {
 	surf_man.Add(s3);
 	surf_man.Add(s4);
 
+	KT::Triangle tri1;
+	tri1.m_a = vec3(-5.0f,- 1.0f, -5.0f);
+	tri1.m_b = vec3( 5.0f, -1.0f,  5.0f);
+	tri1.m_c = vec3( 5.0f, -1.0f, -5.0f);
+	surf_man.Add(tri1);
+	KT::Triangle tri2;
+	tri2.m_a = vec3( 10.f,  -1.0f,  10.0f);
+	tri2.m_b = vec3(-10.f,  -1.0f, -10.0f);
+	tri2.m_c = vec3(-10.f,  -1.0f,  10.0f);
+	surf_man.Add(tri2);
 	/*const static vec3 color = vec3(rand() % 100 / 100.0f / 2.0f + 0.5f, 0.3f, rand() % 100 / 100.0f);*/
 	
 	static size_t cnt = 0;
@@ -120,6 +134,8 @@ int main() {
 	const static float shinness = 32.0f;
 	vec3 halfDir;
 	float dotHN;
+	clock_t start, stop;
+	start = clock();
 	for (size_t y = 0; y < Height; ++y) {
 		for (size_t x = 0; x < Width; ++x) {
 			
@@ -134,13 +150,14 @@ int main() {
 				//print(output_color);
 				// Note: y * Width * 3 since we have width * 3 floats in a row!
 				index = y * Width * 3 + x * 3;
-				image[index] =	   output_color.m_x;
-				image[index + 1] = output_color.m_y;
-				image[index + 2] = output_color.m_z;
+				image[index] =	   sqrtf(output_color.m_x);
+				image[index + 1] = sqrtf(output_color.m_y);
+				image[index + 2] = sqrtf(output_color.m_z);
 			}
 		}
 	}
-
+	stop = clock();
+	print("CPU rendering took: ", (double)(stop - start) / CLOCKS_PER_SEC);
 	
 
 	
